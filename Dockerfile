@@ -21,9 +21,8 @@ COPY . .
 RUN mkdir -p /tmp/media
 
 COPY start.sh .
-RUN chmod +x start.sh
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
 
 EXPOSE 8000
 
 CMD ["./start.sh"]
-

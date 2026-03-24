@@ -1,0 +1,30 @@
+# Django
+*.pyc
+__pycache__/
+*.pyo
+db.sqlite3
+*.log
+
+# Media (downloaded/generated files — don't commit)
+media/
+
+# Environment
+.env
+*.env
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Static collected
+staticfiles/

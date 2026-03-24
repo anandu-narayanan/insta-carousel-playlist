@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarouselBeats — Instagram Song Detector</title>
+  <meta name="description"
+    content="Download Instagram carousel posts, identify songs, get YouTube links, and create merged playlists automatically." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #7c3aed;
+      --accent2: #a855f7;
+      --accent3: #c084fc;
+      --pink: #ec4899;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #f0f0f8;
+      --muted: #6b7280;
+      --glow: 0 0 40px rgba(124, 58, 237, 0.25);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated Background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124, 58, 237, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 60% 30%, rgba(236, 72, 153, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 64px 0 48px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      border-radius: 50px;
+      padding: 8px 20px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent3);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .logo-badge svg {
+      width: 16px;
+      height: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.7;
+        transform: scale(0.9);
+      }
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent3) 50%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Feature Pills ── */
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 28px;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .pill-dot.purple {
+      background: var(--accent2);
+    }
+
+    .pill-dot.pink {
+      background: var(--pink);
+    }
+
+    .pill-dot.green {
+      background: var(--green);
+    }
+
+    .pill-dot.yellow {
+      background: var(--yellow);
+    }
+
+    /* ── Input Card ── */
+    .input-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .input-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent);
+    }
+
+    .input-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #d1d5db;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    #url-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #url-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    }
+
+    #url-input::placeholder {
+      color: var(--muted);
+    }
+
+    #process-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px 28px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+    }
+
+    #process-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.45);
+    }
+
+    #process-btn:active {
+      transform: translateY(0);
+    }
+
+    #process-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Steps ── */
+    #steps-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .steps-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: opacity 0.3s;
+    }
+
+    .step:last-child {
+      border-bottom: none;
+    }
+
+    .step.inactive {
+      opacity: 0.35;
+    }
+
+    .step-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: all 0.4s ease;
+    }
+
+    .step-icon.waiting {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+    }
+
+    .step-icon.active {
+      background: rgba(124, 58, 237, 0.2);
+      border: 1.5px solid var(--accent);
+      animation: spin-glow 1s linear infinite;
+    }
+
+    @keyframes spin-glow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 4px rgba(124, 58, 237, 0.3);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+      }
+    }
+
+    .step-icon.done {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid var(--green);
+    }
+
+    .step-icon.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid var(--red);
+    }
+
+    .step-info {
+      flex: 1;
+    }
+
+    .step-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .step-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .step-tag.waiting {
+      background: var(--surface2);
+      color: var(--muted);
+    }
+
+    .step-tag.active {
+      background: rgba(124, 58, 237, 0.2);
+      color: var(--accent3);
+    }
+
+    .step-tag.done {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+    }
+
+    .step-tag.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+    }
+
+    /* ── Results ── */
+    #results-container {
+      display: none;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title span {
+      font-size: 20px;
+    }
+
+    /* ── Stat Bar ── */
+    .stat-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent2), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Download Actions ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: var(--radius-sm);
+      padding: 13px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: white;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(124, 58, 237, 0.08);
+    }
+
+    .btn-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-green:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    /* ── Song Cards ── */
+    .songs-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .song-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeInUp 0.4s ease both;
+    }
+
+    .song-card:hover {
+      border-color: rgba(124, 58, 237, 0.4);
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .song-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .song-art {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--surface2);
+    }
+
+    .song-art-placeholder {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .song-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .song-title {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-artist {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-yt-title {
+      font-size: 11px;
+      color: #4b5563;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .song-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      white-space: nowrap;
+      border: none;
+    }
+
+    .song-btn-yt {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .song-btn-yt:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .song-btn-dl {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .song-btn-dl:hover {
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    /* ── Alert / Warn Banner ── */
+    .banner {
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .banner-warn {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fbbf24;
+    }
+
+    .banner-info {
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      color: var(--accent3);
+    }
+
+    /* ── Error ── */
+    #error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      color: #f87171;
+      font-size: 14px;
+      display: none;
+      margin-bottom: 20px;
+    }
+
+    /* ── Caption ── */
+    .caption-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    /* ── No Songs ── */
+    .no-songs {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+
+    .no-songs-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .no-songs h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #9ca3af;
+    }
+
+    .no-songs p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 60px;
+      padding-bottom: 40px;
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ── Media preview ── */
+    .media-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .media-thumb {
+      width: 70px;
+      height: 70px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .input-row {
+        flex-direction: column;
+      }
+
+      #process-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .song-card {
+        flex-wrap: wrap;
+      }
+
+      .song-actions {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- ── Header ── -->
+    <header>
+      <div class="logo-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+        </svg>
+        CarouselBeats
+      </div>
+      <h1>Instagram Carousel<br />to Playlist</h1>
+      <p>Paste any Instagram carousel URL, identify songs via Shazam, get YouTube links, and build a
+        merged playlist.</p>
+      <p style="color: #9ca3af; font-size: 20px; margin-top: 10px;">Try Now!!!</p>
+      <p style="color: #9ca3af; font-size: 14px; margin-top: 10px;">Create Your Own Playlist</p>
+      <div class="features">
+        <div class="pill"><span class="pill-dot purple"></span>Carousel Download</div>
+        <div class="pill"><span class="pill-dot pink"></span>Shazam ID</div>
+        <div class="pill"><span class="pill-dot green"></span>YouTube Links</div>
+        <div class="pill"><span class="pill-dot yellow"></span>Merged Playlist</div>
+      </div>
+    </header>
+
+    <!-- ── Input ── -->
+    <div class="input-card">
+      <div class="input-label">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        Instagram Carousel URL
+      </div>
+      <div class="input-row">
+        <input type="url" id="url-input" placeholder="https://www.instagram.com/p/Cxxx..." autocomplete="off"
+          spellcheck="false" />
+        <button id="process-btn" onclick="processURL()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          Analyze
+        </button>
+      </div>
+      <div class="banner banner-info" style="margin-top:18px; margin-bottom:0;">
+        <span>ℹ️</span>
+        <span>Works best with <strong>public posts</strong>. Processing takes 1–3 minutes depending on post
+          length.</span>
+      </div>
+    </div>
+
+    <!-- ── Error Box ── -->
+    <div id="error-box"></div>
+
+    <!-- ── Steps Progress ── -->
+    <div id="steps-container">
+      <div class="steps-title">⚙️ Processing...</div>
+      <div class="step inactive" id="step-1">
+        <div class="step-icon waiting" id="step-1-icon">📥</div>
+        <div class="step-info">
+          <div class="step-name">Download Carousel</div>
+          <div class="step-desc">Fetching all media from Instagram</div>
+        </div>
+        <span class="step-tag waiting" id="step-1-tag">Waiting</span>
+      </div>
+      <div class="step inactive" id="step-2">
+        <div class="step-icon waiting" id="step-2-icon">🎞️</div>
+        <div class="step-info">
+          <div class="step-name">Merge Media</div>
+          <div class="step-desc">Combining clips + extracting audio</div>
+        </div>
+        <span class="step-tag waiting" id="step-2-tag">Waiting</span>
+      </div>
+      <div class="step inactive" id="step-3">
+        <div class="step-icon waiting" id="step-3-icon">🎵</div>
+        <div class="step-info">
+          <div class="step-name">Identify Songs</div>
+          <div class="step-desc">Audio fingerprinting via Shazam</div>
+        </div>
+        <span class="step-tag waiting" id="step-3-tag">Waiting</span>
+      </div>
+      <div class="step inactive" id="step-4">
+        <div class="step-icon waiting" id="step-4-icon">▶️</div>
+        <div class="step-info">
+          <div class="step-name">Find on YouTube</div>
+          <div class="step-desc">Searching &amp; downloading audio</div>
+        </div>
+        <span class="step-tag waiting" id="step-4-tag">Waiting</span>
+      </div>
+      <div class="step inactive" id="step-5">
+        <div class="step-icon waiting" id="step-5-icon">💿</div>
+        <div class="step-info">
+          <div class="step-name">Build Playlist</div>
+          <div class="step-desc">Merging songs into one MP3</div>
+        </div>
+        <span class="step-tag waiting" id="step-5-tag">Waiting</span>
+      </div>
+    </div>
+
+    <!-- ── Results ── -->
+    <div id="results-container">
+
+      <!-- Stats -->
+      <div class="stat-bar" id="stat-bar"></div>
+
+      <!-- Caption -->
+      <div id="caption-area"></div>
+
+      <!-- Download buttons -->
+      <div class="actions" id="download-actions"></div>
+
+      <!-- Songs -->
+      <div class="section-title"><span>🎵</span> Identified Songs</div>
+      <div class="songs-grid" id="songs-grid"></div>
+
+    </div>
+
+    <footer>
+      Disclaimer : CarouselBeats — Respect Instagram's ToS and content creators' rights.
+    </footer>
+  </div>
+
+  <script>
+    // ── Step state machine ──────────────────────────────────────────
+    const STEP_COUNT = 5;
+    let currentStep = 0;
+
+    function resetSteps() {
+      for (let i = 1; i <= STEP_COUNT; i++) {
+        setStep(i, 'waiting');
+        document.getElementById(`step-${i}`).classList.add('inactive');
+      }
+      currentStep = 0;
+    }
+
+    function setStep(n, state, extra = '') {
+      const el = document.getElementById(`step-${n}`);
+      const icon = document.getElementById(`step-${n}-icon`);
+      const tag = document.getElementById(`step-${n}-tag`);
+      const icons = { 1: '📥', 2: '🎞️', 3: '🎵', 4: '▶️', 5: '💿' };
+      const doneIcon = '✅';
+      const errIcon = '❌';
+      const spinIcon = '◌';
+
+      el.classList.remove('inactive');
+      icon.className = `step-icon ${state}`;
+      tag.className = `step-tag ${state}`;
+
+      if (state === 'done') { icon.textContent = doneIcon; tag.textContent = 'Done'; }
+      else if (state === 'active') { icon.textContent = icons[n]; tag.textContent = 'Running…'; }
+      else if (state === 'error') { icon.textContent = errIcon; tag.textContent = 'Failed'; }
+      else { icon.textContent = icons[n]; tag.textContent = 'Waiting'; el.classList.add('inactive'); }
+    }
+
+    function advanceTo(n) {
+      // Mark previous steps done
+      for (let i = 1; i < n; i++) setStep(i, 'done');
+      setStep(n, 'active');
+      currentStep = n;
+    }
+
+    // ── Main process ────────────────────────────────────────────────
+    async function processURL() {
+      const urlInput = document.getElementById('url-input');
+      const btn = document.getElementById('process-btn');
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        showError('Please paste an Instagram carousel URL first.');
+        return;
+      }
+      if (!url.includes('instagram.com')) {
+        showError('This doesn\'t look like an Instagram URL. Please check and try again.');
+        return;
+      }
+
+      // Reset UI
+      hideError();
+      document.getElementById('results-container').style.display = 'none';
+      document.getElementById('steps-container').style.display = 'block';
+      resetSteps();
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Processing…';
+
+      // Animated step advance — moves every 15s, cancelled when fetch returns
+      let stepTimers = [];
+      let autoStepInterval = null;
+      function startStepAnimation() {
+        advanceTo(1);
+        let next = 2;
+        autoStepInterval = setInterval(() => {
+          if (next <= STEP_COUNT) { advanceTo(next++); }
+          else { clearInterval(autoStepInterval); }
+        }, 15000);
+      }
+      function stopStepAnimation() {
+        if (autoStepInterval) { clearInterval(autoStepInterval); autoStepInterval = null; }
+        stepTimers.forEach(clearTimeout);
+        stepTimers = [];
+      }
+      startStepAnimation();
+
+      try {
+        const resp = await fetch('/api/process/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+          throw new Error(data.error || 'Server error. Check console for details.');
+        }
+
+        // Stop animation timers, mark all steps done
+        stopStepAnimation();
+        for (let i = 1; i <= STEP_COUNT; i++) setStep(i, 'done');
+
+        renderResults(data);
+
+      } catch (e) {
+        stopStepAnimation();
+        setStep(currentStep, 'error');
+        showError('❌ ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Analyze';
+      }
+    }
+
+    // ── Render results ──────────────────────────────────────────────
+    function renderResults(data) {
+      document.getElementById('results-container').style.display = 'block';
+
+      // Stats
+      document.getElementById('stat-bar').innerHTML = `
+        <div class="stat"><div class="stat-value">${data.media_count || 0}</div><div class="stat-label">Carousel Items</div></div>
+        <div class="stat"><div class="stat-value">${data.songs_identified || 0}</div><div class="stat-label">Songs Found</div></div>
+        <div class="stat"><div class="stat-value">${data.songs ? data.songs.filter(s => s.youtube_url).length : 0}</div><div class="stat-label">YouTube Links</div></div>
+        <div class="stat"><div class="stat-value">${data.playlist_url ? '1' : '0'}</div><div class="stat-label">Playlist Built</div></div>
+      `;
+
+      // Caption
+      const capArea = document.getElementById('caption-area');
+      if (data.post_caption && data.post_caption.trim()) {
+        capArea.innerHTML = `<div class="caption-box">📝 ${escHtml(data.post_caption)}</div>`;
+      } else {
+        capArea.innerHTML = '';
+      }
+
+      // Download actions
+      let actionsHTML = '';
+      if (data.merged_video_url) {
+        actionsHTML += `<a href="${data.merged_video_url}" download class="btn btn-secondary">🎞️ Download Merged Video</a>`;
+      }
+      if (data.playlist_url) {
+        actionsHTML += `<a href="${data.playlist_url}" download class="btn btn-primary">💿 Download Playlist MP3</a>`;
+      }
+      document.getElementById('download-actions').innerHTML = actionsHTML;
+
+      // Songs
+      const grid = document.getElementById('songs-grid');
+      if (!data.songs || data.songs.length === 0) {
+        grid.innerHTML = `
+          <div class="no-songs">
+            <div class="no-songs-icon">🎧</div>
+            <h3>No Songs Identified</h3>
+            <p>Shazam couldn't match any songs in this carousel.<br/>This may happen with non-mainstream music, very short clips, or low audio quality.</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = data.songs.map((s, i) => `
+        <div class="song-card" style="animation-delay:${i * 0.08}s">
+          <div class="song-number">${i + 1}</div>
+          ${s.artwork
+          ? `<img class="song-art" src="${escHtml(s.artwork)}" alt="Album art" loading="lazy" />`
+          : `<div class="song-art-placeholder">🎵</div>`
+        }
+          <div class="song-info">
+            <div class="song-title">${escHtml(s.title || 'Unknown Title')}</div>
+            <div class="song-artist">${escHtml(s.artist || 'Unknown Artist')}</div>
+            ${s.youtube_title ? `<div class="song-yt-title">▶ ${escHtml(s.youtube_title)}</div>` : ''}
+          </div>
+          <div class="song-actions">
+            ${s.youtube_url
+          ? `<a href="${escHtml(s.youtube_url)}" target="_blank" rel="noopener" class="song-btn song-btn-yt">▶ YouTube</a>`
+          : '<span style="font-size:12px;color:#4b5563">Not found</span>'
+        }
+            ${s.mp3_url
+          ? `<a href="${escHtml(s.mp3_url)}" download class="song-btn song-btn-dl">⬇ MP3</a>`
+          : ''
+        }
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ── Utilities ───────────────────────────────────────────────────
+    function showError(msg) {
+      const box = document.getElementById('error-box');
+      box.textContent = msg;
+      box.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('error-box').style.display = 'none';
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Allow pressing Enter in the URL input
+    document.getElementById('url-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') processURL();
+    });
+  </script>
+</body>
+
+</html>

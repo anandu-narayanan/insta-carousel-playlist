@@ -20,8 +20,10 @@ COPY . .
 # Create media dir
 RUN mkdir -p /tmp/media
 
+COPY start.sh .
+RUN chmod +x start.sh
+
 EXPOSE 8000
 
-# Collect static then start gunicorn (SECRET_KEY is available at runtime via env vars)
-CMD ["/bin/sh", "-c", "python manage.py collectstatic --noinput && exec gunicorn carousel_app.wsgi:application --bind 0.0.0.0:${PORT:-8000} --timeout 300 --workers 2 --threads 2"]
+CMD ["./start.sh"]
 

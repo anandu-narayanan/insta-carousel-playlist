@@ -40,3 +40,4 @@ services:
   - type: redis
     name: carouselbeats-redis
     plan: free
+    ipAllowList: []

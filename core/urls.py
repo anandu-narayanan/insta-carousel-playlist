@@ -7,4 +7,3 @@ urlpatterns = [
     path('api/status/<str:job_id>/', views.job_status, name='job_status'),
     path('download/<str:session_id>/<path:filepath>/', views.download_file, name='download'),
 ]
-

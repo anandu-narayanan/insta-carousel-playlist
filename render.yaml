@@ -3,6 +3,7 @@ services:
     name: carouselbeats
     runtime: docker
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
@@ -12,32 +13,3 @@ services:
         value: .onrender.com
       - key: MEDIA_ROOT
         value: /tmp/media
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: carouselbeats-redis
-          property: connectionString
-
-  - type: worker
-    name: carouselbeats-worker
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerCommand: celery -A carousel_app worker --loglevel=info --concurrency=2
-    envVars:
-      - key: DJANGO_SECRET_KEY
-        fromService:
-          type: web
-          name: carouselbeats
-          envVarKey: DJANGO_SECRET_KEY
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: carouselbeats-redis
-          property: connectionString
-      - key: MEDIA_ROOT
-        value: /tmp/media
-
-  - type: redis
-    name: carouselbeats-redis
-    plan: free
-    ipAllowList: []

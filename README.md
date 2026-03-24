@@ -2,6 +2,26 @@
 
 Instagram carousel to playlist web app built with Django.
 
+## Deploy on Railway
+
+1. Push this repo to GitHub.
+2. In Railway, create a new project from the GitHub repo.
+3. Railway will detect the [`Dockerfile`](/c:/Users/think/OneDrive/Desktop/Projects/insta-carousel-playlist/Dockerfile) and build the app as a single web service.
+4. Set these environment variables in Railway:
+
+- `DJANGO_SECRET_KEY`
+- `DEBUG=False`
+- `ALLOWED_HOSTS=<your-app>.up.railway.app`
+- `MEDIA_ROOT=/tmp/media`
+
+Optional:
+
+- `INSTAGRAM_USERNAME`
+- `INSTAGRAM_PASSWORD`
+- `CSRF_TRUSTED_ORIGINS=https://<your-app>.up.railway.app`
+
+If you want generated files to survive redeploys, attach a Railway volume and set `MEDIA_ROOT` to the mounted path instead of `/tmp/media`.
+
 ## Deploy on Render
 
 1. Push this repo to GitHub.
@@ -27,7 +47,7 @@ Optional:
 ## Notes
 
 - The app runs as a single Docker web service.
-- Background processing uses in-process threads, so it is best suited to one running instance.
+- Background processing uses in-process threads and in-memory job state, so it must run as one instance with one Gunicorn worker.
 - Generated media is stored in `/tmp/media`, which is ephemeral on Render. Files disappear after restarts or redeploys.
 - `ffmpeg` is installed through the Docker image, so no extra buildpacks are needed.
 

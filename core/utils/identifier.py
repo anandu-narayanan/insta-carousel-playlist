@@ -9,8 +9,12 @@ import tempfile
 from shazamio import Shazam
 
 
-def split_audio_into_chunks(audio_path: str, chunk_duration: int = 30) -> list:
-    """Split a WAV file into fixed-duration chunks for Shazam analysis."""
+def split_audio_into_chunks(
+    audio_path: str,
+    chunk_duration: int = 18,
+    stride: int = 12,
+) -> list:
+    """Split a WAV file into overlapping chunks for better song coverage."""
     # Get total duration via ffprobe
     result = subprocess.run(
         ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration',
@@ -39,7 +43,7 @@ def split_audio_into_chunks(audio_path: str, chunk_duration: int = 30) -> list:
         ], capture_output=True)
         if os.path.exists(chunk_path) and os.path.getsize(chunk_path) > 1000:
             chunks.append({'path': chunk_path, 'start': start})
-        start += chunk_duration
+        start += stride
         idx += 1
 
     return chunks
@@ -95,7 +99,7 @@ def identify_songs(audio_path: str) -> list:
     Returns a list of dicts: [{title, artist, shazam_url, artwork}, ...]
     """
     print(f"[identifier] Splitting audio: {audio_path}")
-    chunks = split_audio_into_chunks(audio_path, chunk_duration=30)
+    chunks = split_audio_into_chunks(audio_path, chunk_duration=18, stride=12)
     print(f"[identifier] Got {len(chunks)} chunks, running Shazam...")
 
     songs = asyncio.run(_identify_all(chunks))

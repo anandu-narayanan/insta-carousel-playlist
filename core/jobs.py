@@ -7,6 +7,7 @@ import uuid
 import os
 import traceback
 from django.conf import settings
+from django.urls import reverse
 
 # In-memory job store — works within a single gunicorn worker
 _jobs: dict = {}
@@ -72,11 +73,11 @@ def run_pipeline(job_id: str, url: str, session_id: str):
         _set(job_id, step=5, message='Building merged playlist MP3…')
         playlist_path = build_playlist(enriched_songs, session_dir, session_id)
 
-        def media_url(path):
+        def download_url(path):
             if not path or not os.path.exists(path):
                 return None
-            rel = os.path.relpath(path, settings.MEDIA_ROOT).replace('\\', '/')
-            return f'{settings.MEDIA_URL}{rel}'
+            relative_path = os.path.relpath(path, session_dir).replace('\\', '/')
+            return reverse('download', args=[session_id, relative_path])
 
         songs_response = [{
             'title': s.get('title', ''),
@@ -87,15 +88,15 @@ def run_pipeline(job_id: str, url: str, session_id: str):
             'youtube_title': s.get('youtube_title', ''),
             'youtube_thumbnail': s.get('youtube_thumbnail', ''),
             'duration': s.get('duration', ''),
-            'mp3_url': media_url(s.get('mp3_path')),
+            'mp3_url': download_url(s.get('mp3_path')),
         } for s in enriched_songs]
 
         result = {
             'session_id': session_id,
             'post_caption': carousel_data.get('post_caption', ''),
             'media_count': len(media_files),
-            'merged_video_url': media_url(merged_video),
-            'playlist_url': media_url(playlist_path),
+            'merged_video_url': download_url(merged_video),
+            'playlist_url': download_url(playlist_path),
             'songs': songs_response,
             'songs_identified': len([s for s in songs_response if s['title']]),
         }

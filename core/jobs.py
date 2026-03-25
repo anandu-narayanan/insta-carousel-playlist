@@ -69,6 +69,7 @@ def run_pipeline(job_id: str, url: str, session_id: str):
         songs_dir = os.path.join(session_dir, 'songs')
         os.makedirs(songs_dir, exist_ok=True)
         enriched_songs = find_and_download_songs(songs, songs_dir)
+        downloaded_mp3_count = len([s for s in enriched_songs if s.get('mp3_path')])
 
         _set(job_id, step=5, message='Building merged playlist MP3…')
         playlist_path = build_playlist(enriched_songs, session_dir, session_id)
@@ -99,6 +100,8 @@ def run_pipeline(job_id: str, url: str, session_id: str):
             'playlist_url': download_url(playlist_path),
             'songs': songs_response,
             'songs_identified': len([s for s in songs_response if s['title']]),
+            'songs_downloaded': downloaded_mp3_count,
+            'playlist_unavailable_reason': None if playlist_path else 'No song MP3s were downloaded, so the merged playlist could not be created.',
         }
         _set(job_id, step=5, message='Done!', data=result, done=True)
 
